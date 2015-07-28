@@ -10,6 +10,8 @@ import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.text.NumberFormat;
+
 /**
  * This app displays an order form to order coffee.
  */
@@ -72,7 +74,8 @@ public class MainActivity extends AppCompatActivity {
         // Send the order summary in the email body.
         Intent intent = new Intent(Intent.ACTION_SENDTO);
         intent.setData(Uri.parse("mailto:")); // only email apps should handle this
-        intent.putExtra(Intent.EXTRA_SUBJECT, "JustJava order for " + name);
+        intent.putExtra(Intent.EXTRA_SUBJECT,
+                getString(R.string.order_summary_email_subject, name));
         intent.putExtra(Intent.EXTRA_TEXT, message);
 
         if (intent.resolveActivity(getPackageManager()) != null) {
@@ -114,13 +117,15 @@ public class MainActivity extends AppCompatActivity {
      * @param addChocolate    is whether or not to add chocolate to the coffee
      * @return text summary
      */
-    private String createOrderSummary(String name, int price, boolean addWhippedCream, boolean addChocolate) {
-        String priceMessage = "Name: " + name;
-        priceMessage += "\nAdd whipped cream? " + addWhippedCream;
-        priceMessage += "\nAdd chocolate? " + addChocolate;
-        priceMessage += "\nQuantity: " + quantity;
-        priceMessage += "\nTotal: $" + price;
-        priceMessage += "\nThank you!";
+    private String createOrderSummary(String name, int price, boolean addWhippedCream,
+                                      boolean addChocolate) {
+        String priceMessage = getString(R.string.order_summary_name, name);
+        priceMessage += "\n" + getString(R.string.order_summary_whipped_cream, addWhippedCream);
+        priceMessage += "\n" + getString(R.string.order_summary_chocolate, addChocolate);
+        priceMessage += "\n" + getString(R.string.order_summary_quantity, quantity);
+        priceMessage += "\n" + getString(R.string.order_summary_price,
+                NumberFormat.getCurrencyInstance().format(price));
+        priceMessage += "\n" + getString(R.string.thank_you);
         return priceMessage;
     }
 
