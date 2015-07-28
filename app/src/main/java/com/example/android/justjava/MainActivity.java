@@ -1,13 +1,14 @@
 package com.example.android.justjava;
 
+import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
+import android.text.Editable;
 import android.view.View;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 
 /**
  * This app displays an order form to order coffee.
@@ -27,9 +28,6 @@ public class MainActivity extends AppCompatActivity {
      */
     public void increment(View view) {
         if (quantity == 100) {
-            // Show an error message as a toast
-            Toast.makeText(this, "You cannot have more than 100 coffees", Toast.LENGTH_SHORT).show();
-            // Exit this method early because there's nothing left to do
             return;
         }
         quantity = quantity + 1;
@@ -40,23 +38,21 @@ public class MainActivity extends AppCompatActivity {
      * This method is called when the minus button is clicked.
      */
     public void decrement(View view) {
-        if (quantity == 1) {
-            // Show an error message as a toast
-            Toast.makeText(this, "You cannot have less than 1 coffee", Toast.LENGTH_SHORT).show();
-            // Exit this method early because there's nothing left to do
+        if (quantity == 0) {
             return;
         }
         quantity = quantity - 1;
         displayQuantity(quantity);
     }
+
     /**
      * This method is called when the order button is clicked.
      */
     public void submitOrder(View view) {
-
-        EditText text = (EditText) findViewById(R.id.name_field);
-        String name = text.getText().toString();
-        Log.v("MainActivity", "Name: "+ name);
+        // Get user's name
+        EditText nameField = (EditText) findViewById(R.id.name_field);
+        Editable nameEditable = nameField.getText();
+        String name = nameEditable.toString();
 
         // Figure out if the user wants whipped cream topping
         CheckBox whippedCreamCheckBox = (CheckBox) findViewById(R.id.whipped_cream_checkbox);
@@ -70,39 +66,55 @@ public class MainActivity extends AppCompatActivity {
         int price = calculatePrice(hasWhippedCream, hasChocolate);
 
         // Display the order summary on the screen
-        String message = createOrderSummary(price, hasWhippedCream, hasChocolate, name);
-        displayMessage(message);
+        String message = createOrderSummary(name, price, hasWhippedCream, hasChocolate);
+
+        // Use an intent to launch an email app.
+        // Send the order summary in the email body.
+        Intent intent = new Intent(Intent.ACTION_SENDTO);
+        intent.setData(Uri.parse("mailto:")); // only email apps should handle this
+        intent.putExtra(Intent.EXTRA_SUBJECT, "JustJava order for " + name);
+        intent.putExtra(Intent.EXTRA_TEXT, message);
+
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        }
     }
 
     /**
      * Calculates the price of the order.
      *
+     * @param addWhippedCream is whether or not we should include whipped cream topping in the price
+     * @param addChocolate    is whether or not we should include whipped cream topping in the price
      * @return total price
      */
-    private int calculatePrice( boolean hasWhippedCream, boolean hasChocolate) {
+    private int calculatePrice(boolean addWhippedCream, boolean addChocolate) {
+        // First calculate the price of one cup of coffee
         int basePrice = 5;
 
-        if (hasWhippedCream){
-            basePrice = basePrice +1;
+        // If the user wants whipped cream, add $1 per cup
+        if (addWhippedCream) {
+            basePrice = basePrice + 1;
         }
 
-        if (hasChocolate){
-            basePrice = basePrice +2;
+        // If the user wants chocolate, add $2 per cup
+        if (addChocolate) {
+            basePrice = basePrice + 2;
         }
 
+        // Calculate the total order price by multiplying by the quantity
         return quantity * basePrice;
     }
 
     /**
      * Create summary of the order.
      *
+     * @param name            on the order
      * @param price           of the order
      * @param addWhippedCream is whether or not to add whipped cream to the coffee
      * @param addChocolate    is whether or not to add chocolate to the coffee
      * @return text summary
      */
-    private String createOrderSummary(int price, boolean addWhippedCream, boolean addChocolate, String name) {
-
+    private String createOrderSummary(String name, int price, boolean addWhippedCream, boolean addChocolate) {
         String priceMessage = "Name: " + name;
         priceMessage += "\nAdd whipped cream? " + addWhippedCream;
         priceMessage += "\nAdd chocolate? " + addChocolate;
@@ -120,13 +132,4 @@ public class MainActivity extends AppCompatActivity {
                 R.id.quantity_text_view);
         quantityTextView.setText("" + numberOfCoffees);
     }
-
-    /**
-     * This method displays the given text on the screen.
-     */
-    private void displayMessage(String message) {
-        TextView orderSummaryTextView = (TextView) findViewById(R.id.order_summary_text_view);
-        orderSummaryTextView.setText(message);
-    }
-
 }
